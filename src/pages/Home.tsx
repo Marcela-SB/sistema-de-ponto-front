@@ -22,7 +22,7 @@ export default function Home() {
   };
 
   return (
-    <div className="py-10 font-sans">
+    <div className="flex flex-1 py-10 font-sans items-center">
       <Box sx={{ textAlign: 'center' }}>
         <div className="flex flex-col items-center rounded-x">
           <p 
