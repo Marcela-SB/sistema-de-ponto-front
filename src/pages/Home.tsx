@@ -1,4 +1,5 @@
 'use client'
+import { Add } from '@mui/icons-material';
 import Relogio from '../components/Relogio';
 import { Box, Button } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ export default function Home() {
   return (
     <div className="py-10 font-sans">
       <Box sx={{ textAlign: 'center' }}>
-        <div className="flex flex-col items-center bg-white rounded-x">
+        <div className="flex flex-col items-center rounded-x">
           <p 
             className="text-zinc-600 text-4xl mb-2 font-medium"
             style={{
@@ -33,16 +34,28 @@ export default function Home() {
             {dataHoje ? formatarDataManual(dataHoje) : '...'}
           </p>
           <Relogio />
+
+          <Button
+            variant='text'
+            startIcon={<Add />}
+            sx={{
+              ":hover":{
+                bgcolor: 'transparent'
+              }
+            }}
+          >
+            Adicionar observação
+          </Button>
               
           <Button
             variant='contained'
             sx={{
               marginTop: '1.5rem',
-              backgroundColor: '#00337C', // O azul da sua Navbar
-              borderRadius: '50px',       // Deixa arredondado (pílula)
-              padding: '12px 40px',       // Tamanho do botão
+              backgroundColor: '#00337C',
+              borderRadius: '50px',
+              padding: '12px 40px',
               fontWeight: 'bold',
-              textTransform: 'none',      // Evita que o texto fique todo em maiúsculo
+              textTransform: 'none',
               fontSize: '1rem',
               border:'none',
               '&:hover': {
@@ -52,6 +65,19 @@ export default function Home() {
           >
             Registrar Ponto
           </Button>
+
+          <div className="mt-8 grid grid-cols-2 gap-4 w-full max-w-sm">
+            <div className="flex flex-col items-center p-4 bg-green-100 rounded-2xl border border-green-100 shadow-sm">
+              <span className="text-green-700 text-xs uppercase tracking-wider font-bold mb-1">Entrada</span>
+              <span className="text-zinc-800 text-xl font-mono font-semibold tracking-tight">07:12:39</span>
+            </div>
+
+            <div className="flex flex-col items-center p-4 bg-zinc-50 rounded-2xl border border-zinc-200 shadow-sm">
+              <span className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Saída</span>
+              <span className="text-zinc-400 text-xl font-mono font-semibold tracking-tight">--:--:--</span>
+            </div>
+          </div>
+
         </div>
       </Box>
     </div>

@@ -30,7 +30,7 @@ const NavbarLayout = ({ children }) => {
               color: '#00337C', 
               width: 40, 
               height: 40,
-              fontSize: '0.9rem',
+              fontSize: '1.2rem',
               fontWeight: 'bold'
             }}
           >
@@ -49,10 +49,6 @@ const NavbarLayout = ({ children }) => {
       }}>
         {children}
       </main>
-      
-      {/* <footer style={{ textAlign: 'center', padding: '0.1rem', borderTop: '1px solid #eee' }}>
-        <p>© 2026 - Todos os direitos reservados</p>
-      </footer> */}
     </div>
   );
 };
