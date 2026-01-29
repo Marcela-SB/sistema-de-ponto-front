@@ -98,7 +98,7 @@ export default function Management(){
     inTime: null, 
     outTime: null 
   }, // Status: Ausente (Não tem horários)
-];
+    ];
 
     const filteredRows = useMemo(() => {
         return rows.filter((row) =>
