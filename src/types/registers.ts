@@ -1,6 +1,10 @@
 // --- Tipos Base e Enums ---
-export type ObservationType = 'INTERN' | 'SUPERVISOR';
+export const OBS_TYPE = {
+    SUPERVISOR: 'Supervisor',
+    INTERN: 'Bolsista'
+} as const;
 
+export type ObservationType = typeof OBS_TYPE[keyof typeof OBS_TYPE];
 // --- Entidades ---
 
 export interface Department {
@@ -26,3 +30,15 @@ export interface TimeRecord {
     internObservation: Observation | null;
     supervisorObservation: Observation | null;
 }
+
+
+// ------------
+
+
+export const createEmptyObservation = (timeRecordId: string, type: ObservationType): Observation => ({
+    externalId: '',
+    timeRecordExternalId: timeRecordId,
+    type: type,
+    text: '',
+    lastUpdate: ''
+});

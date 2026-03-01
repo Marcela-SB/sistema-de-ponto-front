@@ -1,5 +1,11 @@
 // --- Tipos Base e Enums ---
-export type UserRole = 'Administrador' | 'Supervisor' | 'Bolsista';
+export const ROLES = {
+    ADMIN: 'Administrador',
+    SUPERVISOR: 'Supervisor',
+    INTERN: 'Bolsista'
+} as const;
+
+export type UserRole = typeof ROLES[keyof typeof ROLES];
 
 // --- Entidades ---
 
@@ -25,7 +31,7 @@ export interface AuthResponse {
     externalId: string;
     internExternalId?: string | null;
     name: string;
-    role: string;
+    role: UserRole;
     token: string;
     expiresIn: number;
 }
