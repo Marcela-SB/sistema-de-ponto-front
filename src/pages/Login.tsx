@@ -1,21 +1,47 @@
 import { AccessTime, Login, Visibility, VisibilityOff } from '@mui/icons-material';
 import { Box, Button, Card, CardContent, CircularProgress, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage(){
-    const [email, setEmail] = useState('');
+    const [cpf, setCpf] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const { signIn } = useAuth();
+    const navigate = useNavigate(); 
+
+    const formatCPF = (value: string) => {
+        return value
+            .replace(/\D/g, '') // Remove tudo que não é número
+            .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após os 3 primeiros números
+            .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após os 6 primeiros números
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2') // Coloca hífen após os 9 primeiros números
+            .replace(/(-\d{2})\d+?$/, '$1'); // Limita em 11 números
+    };
+
+    const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value.replace(/\D/g, '');
+        if (rawValue.length <= 11) {
+            setCpf(rawValue); 
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
-        // Lógica de login
+        try {
+            await signIn({ cpf, password });
+            navigate('/home');
+        } catch (error) {
+            alert("Usuário ou senha inválidos!");
+        } finally {
+            setIsLoading(false);
+        }
         
-        console.log({ email, password });
-        setIsLoading(false);
     };
 
     return(
@@ -73,11 +99,12 @@ export default function LoginPage(){
                                     <TextField
                                         required
                                         fullWidth
-                                        label='E-mail'
+                                        label='CPF'
                                         variant='outlined'
-                                        type='email'
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        type='text'
+                                        placeholder='000.000.000-00'
+                                        value={formatCPF(cpf)}
+                                        onChange={handleCpfChange}
                                     />
 
                                     <TextField
