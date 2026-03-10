@@ -1,8 +1,13 @@
 // --- Tipos Base e Enums ---
 export const OBS_TYPE = {
-    SUPERVISOR: 'Supervisor',
-    INTERN: 'Bolsista'
+    SUPERVISOR: 'SUPERVISOR',
+    INTERN: 'INTERN'
 } as const;
+
+export const OBS_LABELS = {
+    [OBS_TYPE.SUPERVISOR]: 'Supervisor',
+    [OBS_TYPE.INTERN]: 'Bolsista'
+};
 
 export type ObservationType = typeof OBS_TYPE[keyof typeof OBS_TYPE];
 // --- Entidades ---

@@ -1,11 +1,17 @@
 // --- Tipos Base e Enums ---
 export const ROLES = {
-    ADMIN: 'Administrador',
-    SUPERVISOR: 'Supervisor',
-    INTERN: 'Bolsista'
+    ADMIN: 'ADMIN',
+    SUPERVISOR: 'SUPERVISOR',
+    INTERN: 'INTERN'
 } as const;
 
-export type UserRole = typeof ROLES[keyof typeof ROLES];
+export const ROLE_LABELS: Record<UserRole, string> = {
+    [ROLES.ADMIN]: 'Administrador',
+    [ROLES.SUPERVISOR]: 'Supervisor',
+    [ROLES.INTERN]: 'Bolsista'
+};
+
+export type UserRole = keyof typeof ROLES;
 
 // --- Entidades ---
 
