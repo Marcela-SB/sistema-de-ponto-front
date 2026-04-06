@@ -4,6 +4,12 @@ import api from "./axios";
 const url = "/time-records";
 
 export const recordService = {
+
+    getAvaliableYears: async (): Promise<number[]> => {
+        const response = await api.get(`${url}/available-years`);
+        return response.data.years || [];
+    },
+
     getMyToday: async (externalId: string): Promise<TimeRecord | null> => {
         const response = await api.get(`${url}/intern/${externalId}/today`);
 

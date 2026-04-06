@@ -1,201 +1,144 @@
-import { Box, Button, Checkbox, Chip, FormControlLabel, FormGroup, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Button, CircularProgress, MenuItem, Select, Stack, Typography } from "@mui/material";
+import { useAuth } from "../contexts/AuthContext";
+import type { Intern } from "../types/perfils";
+import { internService } from "../services/internService";
+import { recordService } from "../services/recordService";
+import { useAvailableYears } from "../hooks/useRecords";
+import { useMyInterns } from "../hooks/useInterns";
+
+
+const MONTHS = [
+    { value: 1, label: "Janeiro" },
+    { value: 2, label: "Fevereiro" },
+    { value: 3, label: "Março" },
+    { value: 4, label: "Abril" },
+    { value: 5, label: "Maio" },
+    { value: 6, label: "Junho" },
+    { value: 7, label: "Julho" },
+    { value: 8, label: "Agosto" },
+    { value: 9, label: "Setembro" },
+    { value: 10, label: "Outubro" },
+    { value: 11, label: "Novembro" },
+    { value: 12, label: "Dezembro" }
+];
 
 export default function SearchInterns(){
-    const currentYear = new Date().getFullYear();
+    const navigate = useNavigate();
+    const {user} = useAuth();
 
-    const [month, setMonth] = useState(1);
-    const [year, setYear] = useState(currentYear)
-    const [intern, setIntern] = useState('');
+    const [month, setMonth] = useState(new Date().getMonth() + 1);
+    const [year, setYear] = useState<number>(new Date().getFullYear());
+    const [internId, setInternId] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
-    const months = [
-        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-    ];
+    const { data: availableYears = [new Date().getFullYear()], isLoading: loadingYears } = useAvailableYears();
+    const { data: interns = [], isLoading: loadingInterns } = useMyInterns(user?.externalId);
 
-    const years = [2026, 2024, 2025, 2023];
+    const handleSearch = async () => {
+        if (!internId) {
+            alert("Selecione um bolsista!");
+            return;
+        }
 
-    const interns = ['aaaa', 'bbbb', 'cccc'];
+        const selectedIntern = interns.find(i => i.externalId === internId);
+        const internName = selectedIntern?.user.name || "Bolsista";
 
-    const columns: GridColDef[] = [
-        {
-            field: 'name',
-            headerName: 'Bolsista',
-            flex: 2,
-            minWidth: 200
-        },
-        // {
-        //     field: 'status',
-        //     headerName: '',
-        //     flex: 1,
-        //     minWidth: 120,
-        //     align: 'right',   
-        //     headerAlign: 'center',
-        //     renderCell: (params) => {
-        //         const status = (params.row.active === true) ? 'Ativo' :
-        //             'Inativado';
+        try {
+            setIsSearching(true);
+            const data = await recordService.getRecordsByPeriod(internId, month, year);
 
-        //         const colors: Record<string, "success" | "warning" | "error" | "default"> = {
-        //             'Ativo': 'success',
-        //             'Inativado': 'error'
-        //         };
+            if (data && data.length > 0) {
+                navigate("/history", { 
+                    state: { 
+                        records: data, 
+                        internId, 
+                        internName,
+                        month, 
+                        year
+                    } 
+                });
+            } else {
+                alert("Não há registros desse bolsista nesse período.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar registros:", error);
+            alert("Erro ao consultar registros.");
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
-        //         return <Chip variant="outlined" label={status} color={colors[status]} />;
-        //     }
-        // },
-        {
-            field: 'actions',
-            headerName: 'Ações',
-            flex: 1.5,
-            align: 'center', 
-            headerAlign: 'center',
-            renderCell: () => (
-                <Button sx={{ textTransform: 'none' }}>
-                    Ver Frequência
-                </Button>
-            )
-        },
-    ];
+    const isInitialLoading = loadingYears || loadingInterns;
 
-    const rows = [
-        { 
-            id: 1, 
-            name: 'Ana Silva de Medeiros', 
-            active: true
-        },
-
-        { 
-            id: 2, 
-            name: 'Maria Eduarda Santos Melo', 
-            active: false
-        },
-        
-        { 
-            id: 3, 
-            name: 'Bruno Costa de Lima', 
-            active: true
-        },
-        
-        { 
-            id: 4, 
-            name: 'Carla Dias Feijão', 
-            active: false
-        },
-        
-        { 
-            id: 5, 
-            name: 'João Felipe da Silva', 
-            active: true
-        },
-    ];
-
-    return(
-        <Box className="flex flex-col w-screen px-12" >
-            <Typography variant="h4">
-                Consultar Bolsista
-            </Typography>
-
+    return (
+        <Box className="flex flex-col w-screen px-12">
+            <Typography variant="h4">Consultar Bolsista</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 5 }}>
                 Veja o resumo de frequência por período
             </Typography>
 
-            <Box 
-                sx={{ 
-                    flexGrow: 1,
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}
-            >
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Box p={3} border={2} borderColor={'divider'} borderRadius={1} mb={4} width={'600px'}>
-                    <Stack spacing={2} alignItems="flex-start">
+                    {isInitialLoading ? (
+                        <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+                    ) : (
+                        <Stack spacing={2} alignItems="flex-start">
+                            {/* Seleção de Bolsista */}
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="body1" fontWeight={'bold'}>Bolsista:*</Typography>
+                                <Select 
+                                    value={internId}
+                                    onChange={(e) => setInternId(e.target.value)}
+                                    sx={{ height: '1.8rem', width:'21.6rem', fontSize: '0.9rem' }}
+                                >
+                                    {interns.map((i) => (
+                                        <MenuItem key={i.externalId} value={i.externalId}>
+                                            {i.user.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </Box>
 
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="body1" fontWeight={'bold'}>
-                                Bolsista:*
-                            </Typography>
+                            {/* Seleção de Período */}
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="body1" fontWeight={'bold'}>Período de referência:*</Typography>
+                                <Select 
+                                    value={month}
+                                    onChange={(e) => setMonth(Number(e.target.value))}
+                                    sx={{ height: '1.8rem', width:'8rem', fontSize: '0.9rem' }}
+                                >
+                                    {MONTHS.map((m) => (
+                                        <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                                    ))}
+                                </Select>
 
-                            <Select 
-                                value={intern}
-                                onChange={(e) => setIntern(e.target.value)}
-                                sx={{
-                                    height: '1.8rem',
-                                    width:'21.6rem',
-                                    fontSize: '0.9rem',
-                                    '& .MuiSelect-select': {
-                                        py: 0.5,
-                                        display: 'flex',
-                                        alignItems: 'center'
-                                    }
-                                }}
-                            >
-                                {interns.map((i, index) => (
-                                    <MenuItem key={index} value={index + 1}>{i}</MenuItem>
-                                ))}
-                            </Select>
-                        </Box>
-                        
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="body1" fontWeight={'bold'}>
-                                Período de referência:*
-                            </Typography>
+                                <Typography variant="h6">/</Typography>
 
-                            <Select 
-                                value={month}
-                                onChange={(e) => setMonth(Number(e.target.value))}
-                                sx={{
-                                    height: '1.8rem',
-                                    width:'8rem',
-                                    fontSize: '0.9rem',
-                                    '& .MuiSelect-select': {
-                                        py: 0.5,
-                                        display: 'flex',
-                                        alignItems: 'center'
-                                    }
-                                }}
-                            >
-                                {months.map((m, index) => (
-                                    <MenuItem key={index} value={index + 1}>{m}</MenuItem>
-                                ))}
-                            </Select>
+                                <Select 
+                                    value={year}
+                                    onChange={(e) => setYear(Number(e.target.value))}
+                                    sx={{ height: '1.8rem', width:'6rem', fontSize: '0.9rem' }}
+                                >
+                                    {availableYears.map((y) => (
+                                        <MenuItem key={y} value={y}>{y}</MenuItem>
+                                    ))}
+                                </Select>
+                            </Box>
 
-                            <Typography variant="h6">/</Typography>
-
-                            <Select 
-                                value={year}
-                                onChange={(e) => setYear(Number(e.target.value))}
-                                sx={{
-                                    height: '1.8rem', // Mesma altura compacta
-                                    width:'6rem',
-                                    fontSize: '0.9rem',
-                                    '& .MuiSelect-select': {
-                                        py: 0.5,
-                                        display: 'flex',
-                                        alignItems: 'center'
-                                    }
-                                }}
-                            >
-                                {years.map((y) => (
-                                    <MenuItem key={y} value={y}>{y}</MenuItem>
-                                ))}
-                            </Select>
-                        </Box>
-
-                        <Box width="100%" display="flex" justifyContent="center">
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    width: '400px',
-                                    textTransform: 'none',
-                                    py: 1
-                                }}
-                            >
-                                Buscar
-                            </Button>
-                        </Box>
-                    </Stack>
+                            <Box width="100%" display="flex" justifyContent="center">
+                                <Button
+                                    variant="contained"
+                                    disabled={isSearching}
+                                    onClick={handleSearch}
+                                    sx={{ width: '400px', textTransform: 'none', py: 1 }}
+                                >
+                                    {isSearching ? 'Buscando...' : 'Buscar'}
+                                </Button>
+                            </Box>
+                        </Stack>
+                    )}
                 </Box>
             </Box>
         </Box>
