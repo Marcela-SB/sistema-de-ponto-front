@@ -4,16 +4,57 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState } from "react";
-import Tooltip from '@mui/material/Tooltip';
+import { useMemo, useState } from "react";
 import type { Intern } from "../types/perfils";
 import { useAuth } from "../contexts/AuthContext";
-import { internService } from "../services/internService";
+import InternEditModal from "../components/InternEditModal";
+import { useMyInterns } from "../hooks/useInterns";
+import { useQueryClient } from "@tanstack/react-query";
+import { userService } from "../services/userService";
 
 export default function Management(){
+    const queryClient = useQueryClient();
     const [searchText, setSearchText] = useState('');
-    const [interns, setInterns] = useState<Intern[] | []>([]);
+    const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { user } = useAuth();
+
+    const { data: interns = [], isLoading } = useMyInterns(user?.externalId);
+
+    const refreshInterns = () => {
+        queryClient.invalidateQueries({ queryKey: ['myInterns', user?.externalId] });
+    };
+
+    const handleAdd = () => {
+        setSelectedIntern(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (intern: Intern) => {
+        setSelectedIntern(intern);
+        setIsModalOpen(true);
+    }
+
+    const handleSave = () =>{
+        refreshInterns();
+    }
+
+    const handleDelete = async (userExternalId: string) => {
+        if (confirm("Deseja realmente desativar este bolsista?")) {
+            try {
+                await userService.delete(userExternalId);
+                refreshInterns(); 
+            } catch (error) {
+                alert("Não foi possível desativar o bolsista.");
+            }
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+    };
+
+    
 
     const columns: GridColDef[] = [
         {
@@ -21,7 +62,7 @@ export default function Management(){
             headerName: 'Bolsista',
             flex: 2,
             minWidth: 200,
-            valueFormatter: (_, row) => row.user.name
+            valueGetter: (_, row) => row.user?.name || '',
         },
         {
             field: 'email',
@@ -30,7 +71,7 @@ export default function Management(){
             align: 'center',
             headerAlign: 'center',
             sortable: false,
-            valueFormatter: (_, row) => row.user.email
+            valueGetter: (_, row) => row.user.email
         },
         {
             field: 'cpf',
@@ -39,7 +80,7 @@ export default function Management(){
             align: 'center',
             headerAlign: 'center',
             sortable: false,
-            valueFormatter: (_, row) => row.user.cpf || '000.000.000-00'
+            valueGetter: (_, row) => row.user.cpf || '000.000.000-00'
         },
         {
             field: 'enrollmentNumber',
@@ -48,7 +89,7 @@ export default function Management(){
             align: 'center',
             headerAlign: 'center',
             sortable: false,
-            valueFormatter: (value) => value ? value : ''
+            valueGetter: (value) => value ? value : ''
         },
         {
             field: 'actions',
@@ -57,42 +98,30 @@ export default function Management(){
             align: 'center', 
             headerAlign: 'center',
             sortable: false,
-            renderCell: () => (
+            renderCell: (params) => (
                 <>
-                    <Tooltip title="Deletar" arrow>
-                        <IconButton color="error" size="small">
-                            <DeleteIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <IconButton color="error" size="small" aria-label="deletar bolsista" onClick={() => handleDelete(params.row.user.externalId)}>
+                        <DeleteIcon />
+                    </IconButton>
 
-                    <Tooltip title="Editar" arrow>
-                        <IconButton color="info" size="small">
-                            <EditIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <IconButton color="info" size="small" aria-label="editar bolsista" onClick={() => handleEdit(params.row)}>
+                        <EditIcon />
+                    </IconButton>
                 </>
             )
         },
     ];
 
-    useEffect(() => {
-            async function loadInterns() {
-                if (user?.externalId) {
-                    try {
-                        const data = await internService.getMyInterns(user.externalId);
-                        setInterns(data);
-                    } catch (error) {
-                        console.error("Erro ao carregar bolsistas:", error);
-                    }
-                }
-            }
-            loadInterns();
-        }, [user?.externalId]);
-
     const filteredRows = useMemo(() => {
-        return interns.filter((intern) =>
-            intern.user?.name.toLowerCase().includes(searchText.toLowerCase())
-        );
+        return interns.filter((intern) => {
+            // Verifica se o nome coincide com a busca
+            const matchesSearch = intern.user?.name.toLowerCase().includes(searchText.toLowerCase());
+            
+            // Verifica se o bolsista está ativo
+            const isActive = intern.user?.active === true;
+
+            return matchesSearch && isActive;
+        });
     }, [searchText, interns]);
 
     return(
@@ -139,6 +168,7 @@ export default function Management(){
                         variant="contained"
                         color="success"
                         startIcon={<AddIcon />}
+                        onClick={handleAdd}
                     >
                         Novo Bolsista
                     </Button>
@@ -151,6 +181,7 @@ export default function Management(){
                         columns={columns}
                         rows={filteredRows}
                         getRowId={(row) => row.externalId}
+                        loading={isLoading}
                         autoHeight={false}
                         disableColumnMenu
                         hideFooter
@@ -161,6 +192,12 @@ export default function Management(){
                     />
                 </Box>
             </Stack>
+
+            <InternEditModal 
+                open={isModalOpen}
+                intern={selectedIntern} 
+                onClose={handleCloseModal}
+                onSave={handleSave} />
         </div>
     );
 }

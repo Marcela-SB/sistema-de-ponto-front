@@ -93,11 +93,14 @@ export default function SearchInterns(){
                                     onChange={(e) => setInternId(e.target.value)}
                                     sx={{ height: '1.8rem', width:'21.6rem', fontSize: '0.9rem' }}
                                 >
-                                    {interns.map((i) => (
-                                        <MenuItem key={i.externalId} value={i.externalId}>
-                                            {i.user.name}
-                                        </MenuItem>
-                                    ))}
+                                    {interns
+                                        .filter((i) => i.user.active === true)
+                                        .map((i) => (
+                                            <MenuItem key={i.externalId} value={i.externalId}>
+                                                {i.user.name}
+                                            </MenuItem>
+                                        ))
+                                    }
                                 </Select>
                             </Box>
 
