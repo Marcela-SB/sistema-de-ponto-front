@@ -24,5 +24,23 @@ export const recordService = {
         const body = obs ? { text: obs } : {};
         const response = await api.post(`${url}/intern/${externalId}`, body);
         return response.data;
+    },
+
+    getRecordsByPeriod: async (externalId: string, month: number, year: number): Promise<TimeRecord[]> => {
+        const formattedMonth = month.toString().padStart(2, '0');
+        const period = `${year}-${formattedMonth}`;
+
+        const response = await api.get(`${url}/intern/${externalId}/period`, {
+            params: {
+                startMonth: period,
+                endMonth: period
+            }
+        });
+        return response.data || [];
+    },
+
+    getMyRecords: async (externalId: string): Promise<TimeRecord[]> => {
+        const responses = await api.get(`${url}/intern/${externalId}`);
+        return responses.data || [];
     }
 }
