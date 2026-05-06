@@ -1,12 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom';
-
-interface User {
-  role: string;
-  isActive: boolean;
-}
+import type { AuthResponse } from '../types/perfils';
 
 interface RoleRouteProps {
-  user: User;
+  user: AuthResponse | null;
   requiredRoles: string | string[];
   redirectPath?: string;
 }
