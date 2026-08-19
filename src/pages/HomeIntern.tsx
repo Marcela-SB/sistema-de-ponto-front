@@ -1,11 +1,17 @@
 'use client'
-import { Add } from '@mui/icons-material';
+import { Add, Visibility } from '@mui/icons-material';
 import Relogio from '../components/Relogio';
-import { Box, Button, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, IconButton, Stack, TextareaAutosize, TextField, Tooltip } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import CommentIcon from '@mui/icons-material/Comment';
+import AddCommentIcon from '@mui/icons-material/AddComment';
 import { useEffect, useState } from "react";
 import { useAuth } from '../contexts/AuthContext';
-import type { TimeRecord } from '../types/registers';
+import { createEmptyObservation, OBS_TYPE, type Observation, type ObservationType, type TimeRecord } from '../types/registers';
 import { recordService } from '../services/recordService';
+import { ROLES } from '../types/perfils';
+import ObservationModal from '../components/ObservationModal';
+import { observationService } from '../services/observationService';
 import { useTodayRecord } from '../hooks/useRecords';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -21,22 +27,6 @@ export default function HomeIntern() {
     useEffect(() => {
         setDataHoje(new Date());
     }, []);
-
-    useEffect(() => {
-        async function fetchRecord() {
-            if (user?.internExternalId) {
-                try {
-                    const data = await recordService.getMyToday(user.internExternalId);
-                    setRecord(data);
-                } catch (error) {
-                    console.error("Erro ao buscar ponto:", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        }
-        fetchRecord();
-    }, [user]);
 
     async function handlePunch(e: React.MouseEvent<HTMLButtonElement>) {
         const internExternalId = user?.internExternalId;
@@ -82,6 +72,38 @@ export default function HomeIntern() {
         return `${dia} de ${mesFormatado}, ${ano}`;
     };
 
+    const [modalOpen, setModalOpen] = useState(false);
+    const [activeData, setActiveData] = useState<{recordExternalId: string,  obs: Observation, date: string } | null>(null);
+
+    const handleOpenObs = (recordExternalId: string, obs: Observation, date: string) => {
+        setActiveData({ recordExternalId,  obs, date });
+        setModalOpen(true);
+    };
+
+    const handleSaveObs = async (recordExternalId: string, type: ObservationType, text: string) => {
+        try {
+            const updatedObs = await observationService.upsertObs(recordExternalId, type, text);
+            queryClient.invalidateQueries({ queryKey: ['todayRecord'] });
+            setActiveData(prev => prev ? { ...prev, obs: updatedObs } : null);
+        } catch (error) {
+            alert("Erro ao salvar observação");
+        }
+    }
+
+    const handleDeleteObs = async (externalId: string) => {
+        try {
+            await observationService.delete(externalId);
+            queryClient.invalidateQueries({ queryKey: ['todayRecord'] });
+            handleClose();
+        } catch (error) {
+            alert("Erro ao deletar observação");
+        }
+    }
+
+    const handleClose = () => {
+        setModalOpen(false);
+    };
+
     return (
         <div className="flex flex-1 py-10 font-sans items-center">
             <Box sx={{ textAlign: 'center' }}>
@@ -95,18 +117,88 @@ export default function HomeIntern() {
                         {dataHoje ? formatarDataManual(dataHoje) : '...'}
                     </p>
                     <Relogio />
+                    
+                    {record &&
+                    <>
+                        {/* <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" paddingTop={2} sx={{ height: '100%' }}>
+                            <Tooltip title="Obs. Bolsista" arrow>
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        disabled={!record.internObservation && user?.role !== ROLES.INTERN}
+                                        onClick={() => handleOpenObs(
+                                            record.externalId,
+                                            record.internObservation ||
+                                            createEmptyObservation( 
+                                                record.externalId, 
+                                                OBS_TYPE.INTERN
+                                            ),
+                                            record.recordDate
+                                        )}
+                                    >
+                                        {record.internObservation ? 
+                                            <CommentIcon color="primary" /> 
+                                        : 
+                                            <AddCommentIcon sx={{ 
+                                                color: user?.role === ROLES.INTERN ? '#ccc' : 'transparent' 
+                                            }} />
+                                        }
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
 
-                    <Button
-                        variant='text'
-                        startIcon={<Add />}
-                        sx={{
-                            ":hover": {
-                                bgcolor: 'transparent'
-                            }
-                        }}
-                    >
-                        Adicionar observação
-                    </Button>
+                            <span> | </span>
+
+                            <Tooltip title="Obs. Supervisor" disableHoverListener={!record.supervisorObservation} arrow>
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        disabled={!record.supervisorObservation && (user?.role !== ROLES.SUPERVISOR && user?.role !== ROLES.ADMIN)}
+                                        onClick={() => handleOpenObs(
+                                            record.externalId,
+                                            record.supervisorObservation ||
+                                            createEmptyObservation( 
+                                                record.externalId, 
+                                                OBS_TYPE.SUPERVISOR
+                                            ),
+                                            record.recordDate
+                                        )}
+                                    >
+                                        {record.supervisorObservation ? 
+                                            <CommentIcon color="secondary" /> 
+                                        : 
+                                            <AddCommentIcon sx={{ 
+                                                color: (user?.role === ROLES.SUPERVISOR || user?.role === ROLES.ADMIN) ? '#ccc' : 'transparent' 
+                                            }} />
+                                        }
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        </Stack> */
+                        //<TextField aria-readonly value={record.internObservation?.text} draggable={false}/>
+                        }
+                        <Button
+                            variant='text'
+                            startIcon={record.internObservation ?<Visibility /> : <Add />}
+                            sx={{
+                                pt: 2,
+                                ":hover": {
+                                    bgcolor: 'transparent'
+                                }
+                            }}
+                            onClick={() => handleOpenObs(
+                                record.externalId,
+                                record.internObservation ||
+                                createEmptyObservation( 
+                                    record.externalId, 
+                                    OBS_TYPE.INTERN
+                                ),
+                                record.recordDate
+                            )}
+                        >
+                            {record.internObservation ? "Visualizar" : "Adicionar"} observação
+                        </Button>
+                    </>}
 
                     <Button
                         variant='contained'
@@ -161,8 +253,20 @@ export default function HomeIntern() {
                         </div>
                     </div>
 
+
+                    <ObservationModal 
+                        open={modalOpen}
+                        onClose={handleClose}
+                        recordExternalId={activeData?.recordExternalId as string}  
+                        selectedObs={activeData?.obs as Observation}
+                        date={activeData?.date || ''}
+                        onSave={handleSaveObs}
+                        onDelete={handleDeleteObs}
+                    />
+
                 </div>
             </Box>
         </div>
     );
+    
 }
