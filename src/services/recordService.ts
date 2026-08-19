@@ -20,8 +20,12 @@ export const recordService = {
         return response.data;
     },
 
-    punchClock: async (externalId: string, obs?: string): Promise<TimeRecord> => {
-        const body = obs ? { text: obs } : {};
+    punchClock: async (externalId: string, lat: number, lon: number, obs?: string): Promise<TimeRecord> => {
+        const body = { 
+            text: obs ? { text: obs } : null,
+            latitude: lat,
+            longitude: lon
+        };
         const response = await api.post(`${url}/intern/${externalId}`, body);
         return response.data;
     },

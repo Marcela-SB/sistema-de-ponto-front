@@ -19,3 +19,10 @@ export const useAvailableYears = () => {
   });
 };
 
+export const useTodayRecord = (internId?: string | null) => {
+  return useQuery({
+    queryKey: ['todayRecord', 'today', internId],
+    queryFn: () => recordService.getMyToday(internId!),
+    enabled: !!internId,
+  });
+};

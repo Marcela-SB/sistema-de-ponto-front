@@ -6,12 +6,16 @@ import { useEffect, useState } from "react";
 import { useAuth } from '../contexts/AuthContext';
 import type { TimeRecord } from '../types/registers';
 import { recordService } from '../services/recordService';
+import { useTodayRecord } from '../hooks/useRecords';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function HomeIntern() {
-    const [dataHoje, setDataHoje] = useState<Date | null>(null);
     const { user } = useAuth();
-    const [record, setRecord] = useState<TimeRecord | null>(null);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: record, isLoading: queryLoading } = useTodayRecord(user?.internExternalId);
+    const [dataHoje, setDataHoje] = useState<Date | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
+    const loading = queryLoading || actionLoading;
     const isWeekend = dataHoje ? (dataHoje.getDay() === 0 || dataHoje.getDay() === 6) : false;
 
     useEffect(() => {
@@ -35,20 +39,37 @@ export default function HomeIntern() {
     }, [user]);
 
     async function handlePunch(e: React.MouseEvent<HTMLButtonElement>) {
-        if (!user?.internExternalId) return;
+        const internExternalId = user?.internExternalId;
+        if (!internExternalId) return;
         
         e.currentTarget.blur();
 
-        try {
-            setLoading(true);
-            const updatedRecord = await recordService.punchClock(user.internExternalId);
-            setRecord(updatedRecord);
-        } catch (error) {
-            console.error("Erro ao registrar ponto:", error);
-            alert("Houve um erro ao registrar o ponto.");
-        } finally {
-            setLoading(false);
+        if (!navigator.geolocation) {
+            alert("Geolocalização não suportada pelo seu navegador.");
+            return;
         }
+
+        setActionLoading(true);
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    await recordService.punchClock(internExternalId, latitude, longitude);
+                    queryClient.invalidateQueries({ queryKey: ['todayRecord'] });
+                } catch (error: any) {
+                    const message = error.response.data.message || "Erro ao registrar ponto.";
+                    alert(message);
+                } finally {
+                    setActionLoading(false);
+                }
+            },
+            (error) => {
+                setActionLoading(false);
+                alert("Você precisa permitir a localização para bater o ponto.");
+            },
+            { enableHighAccuracy: true }
+        );
     }
 
     const formatarDataManual = (data: Date) => {
