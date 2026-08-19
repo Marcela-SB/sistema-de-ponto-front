@@ -11,6 +11,7 @@ import ObservationModal from './ObservationModal';
 import { useAuth } from '../contexts/AuthContext';
 import { ROLES } from '../types/perfils';
 import { observationService } from '../services/observationService';
+import { capitalize } from '../utils/captalize';
 
 interface Props {
     records: TimeRecord[];
@@ -96,7 +97,7 @@ const TimeRecordTable: React.FC<Props> = ({ records, startDate, endDate}) => {
             return {
                 id: dateStrISO,
                 externalId: record?.externalId,
-                recordDate: dateStrISO, 
+                recordDate: dateStrBR, 
                 clockIn: record?.clockIn || null,
                 clockOut: record?.clockOut || null,
                 totalHours: record?.totalHours || null,
@@ -116,11 +117,7 @@ const TimeRecordTable: React.FC<Props> = ({ records, startDate, endDate}) => {
             align: 'center',
             headerAlign: 'center',
             sortable: true,
-            renderCell: (params) => (
-                <>
-                    {format(parseISO(params.value), 'dd/MM/yyyy')}
-                </>
-            )
+            renderCell: (params) => <>{params.value}</>
         },
         {
             field: 'status',
@@ -131,10 +128,12 @@ const TimeRecordTable: React.FC<Props> = ({ records, startDate, endDate}) => {
             sortable: false,
             renderCell: (params) => {
                 if (params.row.isWeekend) {
-                    return <Typography variant="caption" color="text.disabled">{params.row.dayOfWeek}</Typography>;
+                    return <Typography variant="caption" color="text.disabled">
+                        {capitalize(params.row.dayOfWeek)}
+                    </Typography>;
                 }
 
-                const { recordDate, clockIn, clockOut } = params.row;
+                const { id, clockIn, clockOut } = params.row;
 
                 if (clockIn && clockOut && clockIn !== "--:--" && clockOut !== "--:--") {
                     return <Chip size="small" label="Presente" color="success" variant="outlined" />;
@@ -142,8 +141,8 @@ const TimeRecordTable: React.FC<Props> = ({ records, startDate, endDate}) => {
                 if (clockIn && clockIn !== "--:--") {
                     return <Chip size="small" label="Pendente" color="warning" variant="outlined" />;
                 }
-                if (recordDate > today) {
-                    return <Typography variant="caption" color="text.disabled">-</Typography>;
+                if (id > today) {
+                    return <Typography variant="caption">-</Typography>;
                 }
                 return <Chip size="small" label="Falta" color="error" variant="outlined" />;
             }
@@ -170,7 +169,7 @@ const TimeRecordTable: React.FC<Props> = ({ records, startDate, endDate}) => {
             flex: 1, align: 'center', 
             headerAlign: 'center', 
             sortable: false, 
-            renderCell: (p) => p.value ? <strong>{p.value}</strong> : '--:--' 
+            renderCell: (p) => p.value ? <strong>{p.value}</strong> : <strong>--:--</strong>
         },
         {
             field: 'observations',

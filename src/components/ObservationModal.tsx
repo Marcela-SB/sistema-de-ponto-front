@@ -1,9 +1,7 @@
-import { Dialog, DialogTitle, Typography, Stack, DialogContent, DialogActions, Tooltip, IconButton, Button, TextField } from "@mui/material";
+import { Dialog, DialogTitle, Typography, Stack, DialogContent, DialogActions, Tooltip, IconButton, TextField } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
-import CloseIcon from '@mui/icons-material/Close';
-import { format, parseISO } from "date-fns";
 import { OBS_LABELS, OBS_TYPE, type Observation, type ObservationType } from "../types/registers";
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -64,7 +62,7 @@ export default function ObservationModal({
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle sx={{ bgcolor: '#f8f9fa', borderBottom: '1px solid #eee' }} component={"div"}>
                 <Typography variant="h6"  fontWeight="bold" textAlign={'center'}>
-                    Dia {date ? format(parseISO(date), 'dd/MM/yyyy') : ''}
+                    Dia {date ? date : ''}
                 </Typography>
                 
                 <IconButton onClick={onClose} sx={{ position:'absolute', right: 20, top: 10 }}>
