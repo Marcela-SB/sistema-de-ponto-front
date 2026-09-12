@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080', 
+    // O Vite selecionará a URL correta automaticamente conforme o ambiente
+    baseURL: import.meta.env.VITE_API_URL,
     timeout: 10000, // tempo limite de 10 segundos
     headers: {
         'Content-Type': 'application/json',
